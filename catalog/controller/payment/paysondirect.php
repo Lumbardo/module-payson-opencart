@@ -130,7 +130,7 @@ class ControllerPaymentPaysondirect extends Controller {
             $receiver = new Receiver('testagent-1@payson.se', $this->data['amount']);
         }
 
-        
+
         $receivers = array($receiver);
 
         $payData = new PayData($this->data['ok_url'], $this->data['cancel_url'], $this->data['ipn_url'], $this->data['store_name'] . ' Order: ' . $this->data['order_id'], $sender, $receivers);
@@ -180,9 +180,9 @@ class ControllerPaymentPaysondirect extends Controller {
         require_once 'payson/paysonapi.php';
 
         if (!$this->testMode) {
-            $credentials = new PaysonCredentials(1, 'fddb19ac-7470-42b6-a91d-072cb1495f0a', null, 'PAYSON-MODULE-INFO: payson_opencart|1.5|' . VERSION);
-        } else {
             $credentials = new PaysonCredentials(trim($this->config->get('payson_agent_id')), trim($this->config->get('payson_md5')), null, 'PAYSON-MODULE-INFO: payson_opencart|1.5|' . VERSION);
+        } else {
+            $credentials = new PaysonCredentials(1, 'fddb19ac-7470-42b6-a91d-072cb1495f0a', null, 'PAYSON-MODULE-INFO: payson_opencart|1.5|' . VERSION);
         }
 
         $api = new PaysonApi($credentials, $this->testMode);
