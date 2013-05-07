@@ -124,11 +124,13 @@ class ControllerPaymentPaysondirect extends Controller {
 
         if (!$this->testMode) {
             $sender = new Sender($this->data['sender_email'], $this->data['sender_first_name'], $this->data['sender_last_name']);
+            $receiver = new Receiver(trim($this->config->get('payson_user_name')), $this->data['amount']);
         } else {
             $sender = new Sender('test-shopper@payson.se', $this->data['sender_first_name'], $this->data['sender_last_name']);
+            $receiver = new Receiver('testagent-1@payson.se', $this->data['amount']);
         }
 
-        $receiver = new Receiver(trim($this->config->get('payson_user_name')), $this->data['amount']);
+        
         $receivers = array($receiver);
 
         $payData = new PayData($this->data['ok_url'], $this->data['cancel_url'], $this->data['ipn_url'], $this->data['store_name'] . ' Order: ' . $this->data['order_id'], $sender, $receivers);
