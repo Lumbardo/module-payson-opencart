@@ -225,9 +225,6 @@ class ControllerPaymentPaysondirect extends Controller {
 
             $tax_rates_product = $this->tax->getRates($product['price'], $product['tax_class_id']);
 
-            if (empty($tax_rates_product))
-                $this->data['order_items'][] = new OrderItem(html_entity_decode($product['name'], ENT_QUOTES, 'UTF-8'), $product_price, $product['quantity'], 0.0, $product['product_id']);
-
             $tax_amount = 0;
             foreach ($tax_rates_product as $tax_rate) {
                 if ($tax_rate['type'] == "F")
