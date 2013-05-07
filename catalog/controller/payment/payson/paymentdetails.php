@@ -67,9 +67,12 @@ class PaymentDetails {
         $this->type = $responseData["type"];
 
         $this->currencyCode = $responseData["currencyCode"];
-        $this->custom = $responseData["custom"];
-        $this->trackingId = $responseData["trackingId"];
-        $this->purchaseId = $responseData["purchaseId"];
+        if(isset($responseData["custom"]))
+            $this->custom = $responseData["custom"];
+        if(isset($responseData["trackingId"]))
+            $this->trackingId = $responseData["trackingId"];
+        if(isset($responseData["purchaseId"]))
+            $this->purchaseId = $responseData["purchaseId"];
 
         $this->senderEmail = $responseData["senderEmail"];
     }

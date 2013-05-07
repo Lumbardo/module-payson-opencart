@@ -29,6 +29,7 @@ $_['entry_geo_zone']           		= 'Geo Zone:';
 $_['entry_status']             		= 'Status:';
 $_['entry_sort_order']         		= 'Sorteringsordning:';
 $_['entry_logg']   					= 'Logg:<br /><span class="help">Fels&ouml;ka svaret fr&aring;n Payson Direkt (Ange 1 elle 0)</span>';
+$_['entry_totals_to_ignore'] 			   = 'Ignorerade ordertillägg:<br /><span class="help">Ange de ordertillägg som du vill inaktivera.</span>';
 
 // Error
 $_['error_permission']   			= 'Varning: Du har inte beh&ouml;righet att &auml; ndra betalningsmetoden Payson Direct!';

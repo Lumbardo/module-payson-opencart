@@ -9,11 +9,15 @@ ini_set("zlib.output_compression", "Off");
 <script type="text/javascript"><!--
 $('#button-confirm').bind('click', function() {
 	$.ajax({ 
-		//type: 'GET',
-		//url: 'index.php?route=payment/paysondirect/confirm',
-		success: function() {
-			location = '<?php echo $action; ?>';
-		}		
+		type: 'GET',
+		url: 'index.php?route=payment/paysondirect/confirm' + '<?php echo isset($isInvoice) ? "&method=invoice" : ""?>' ,
+		success: function(data) {
+			location.href = data;
+		},
+                error: function(error)
+                {
+                  alert(error.responseText);  
+                }
 	});
 });
 //--></script> 

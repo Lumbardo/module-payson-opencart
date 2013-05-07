@@ -28,6 +28,7 @@ $_['entry_geo_zone']     			= 'Geo Zone:';
 $_['entry_status']       			= 'Status:';
 $_['entry_sort_order']   			= 'Sort Order:';
 $_['entry_logg']   					= 'Logg:<br /><span class="help">Ddebug the response from Payson (1 or 0).</span>';
+$_['entry_totals_to_ignore'] 			   = 'Order totals to ignore:<br /><span class="help">Enter the code for the order totals to ignore.</span>';
 
 // Error
 $_['error_permission']   			= 'Warning: You do not have permission to modify payment Payson Direct!';

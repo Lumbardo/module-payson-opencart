@@ -43,8 +43,7 @@ class ControllerPaymentPaysondirect extends Controller {
 		$this->data['payment_mode'] = $this->language->get('payment_mode');
 		$this->data['payment_method_mode_live'] = $this->language->get('payment_method_mode_live');
 		$this->data['payment_method_mode_sandbox'] = $this->language->get('payment_method_mode_sandbox');
-		
-		
+                
 		$this->data['text_enabled'] = $this->language->get('text_enabled');
 		$this->data['text_disabled'] = $this->language->get('text_disabled');
 		$this->data['text_all_zones'] = $this->language->get('text_all_zones');
@@ -54,6 +53,7 @@ class ControllerPaymentPaysondirect extends Controller {
 		$this->data['entry_geo_zone'] = $this->language->get('entry_geo_zone');
 		$this->data['entry_status'] = $this->language->get('entry_status');
 		$this->data['entry_sort_order'] = $this->language->get('entry_sort_order');
+                $this->data['entry_totals_to_ignore'] = $this->language->get('entry_totals_to_ignore');
 		
 		$this->data['button_save'] = $this->language->get('button_save');
 		$this->data['button_cancel'] = $this->language->get('button_cancel');
@@ -179,17 +179,17 @@ class ControllerPaymentPaysondirect extends Controller {
 		} else {
 			$this->data['paysondirect_status'] = $this->config->get('paysondirect_status');
 		}
-		
-		if (isset($this->request->post['paysondirect_status'])) {
-			$this->data['paysondirect_status'] = $this->request->post['paysondirect_status'];
-		} else {
-			$this->data['paysondirect_status'] = $this->config->get('paysondirect_status');
-		}
-		
+				
 		if (isset($this->request->post['paysondirect_sort_order'])) {
 			$this->data['paysondirect_sort_order'] = $this->request->post['paysondirect_sort_order'];
 		} else {
 			$this->data['paysondirect_sort_order'] = $this->config->get('paysondirect_sort_order');
+		}
+                
+                if (isset($this->request->post['paysondirect_ignored_order_totals'])) {
+			$this->data['paysondirect_ignored_order_totals'] = $this->request->post['paysondirect_ignored_order_totals'];
+		} else {
+			$this->data['paysondirect_ignored_order_totals'] = $this->config->get('paysondirect_ignored_order_totals');
 		}
 
 		$this->template = 'payment/paysondirect.tpl';
