@@ -112,6 +112,7 @@ class ControllerPaymentPaysondirect extends Controller {
 
         if (($paymentType == "INVOICE" || $paymentType == "TRANSFER") && $transferStatus == "ERROR") {
             $this->model_checkout_order->confirm($orderId, 8);
+            $this->paysonApiError($this->language->get('text_denied'));
             return false;
         }
 
