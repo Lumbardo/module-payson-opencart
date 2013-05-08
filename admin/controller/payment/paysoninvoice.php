@@ -102,20 +102,7 @@ class ControllerPaymentPaysoninvoice extends Controller {
         if (!$this->user->hasPermission('modify', 'payment/paysoninvoice')) {
             $this->error['warning'] = $this->language->get('error_permission');
         }
-
-        if ($this->request->post['paysoninvoice_mode'] != 0) {
-            if (!$this->request->post['paysoninvoice_agent_id']) {
-                $this->error['agent_id'] = $this->language->get('error_agent_id');
-            }
-
-            if (!$this->request->post['paysoninvoice_user_name']) {
-                $this->error['user_name'] = $this->language->get('error_user_name');
-            }
-            if (!$this->request->post['paysoninvoice_md5']) {
-                $this->error['md5'] = $this->language->get('error_md5');
-            }
-        }
-
+     
         if (!$this->error) {
             return true;
         } else {
