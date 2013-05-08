@@ -228,9 +228,9 @@ class ControllerPaymentPaysondirect extends Controller {
             $tax_amount = 0;
             foreach ($tax_rates_product as $tax_rate) {
                 if ($tax_rate['type'] == "F")
-                    $this->data['order_items'][] = new OrderItem(html_entity_decode($tax_rate['name'], ENT_QUOTES, 'UTF-8'), $tax_rate['amount'], 1, 0, 'Fixed tax rate');
+                    $this->data['order_items'][] = new OrderItem(html_entity_decode($tax_rate['name'], ENT_QUOTES, 'UTF-8'), $this->currency->format($tax_rate['amount'], $order_data['currency_code'], $order_data['currency_value'], false), 1, 0, 'Fixed tax rate');
                 else {
-                    $tax_amount += $tax_rate['amount'];
+                    $tax_amount += $this->currency->format($tax_rate['amount'], $order_data['currency_code'], $order_data['currency_value'], false);
                 }
             }
 
@@ -240,7 +240,8 @@ class ControllerPaymentPaysondirect extends Controller {
         $orderTotals = $this->getOrderTotals();
 
         foreach ($orderTotals as $orderTotal) {
-            $this->data['order_items'][] = new OrderItem(html_entity_decode($orderTotal['title'], ENT_QUOTES, 'UTF-8'), $orderTotal['value'], 1, $orderTotal['tax_rate'] / 100, $orderTotal['code']);
+            $orderTotalAmount = $this->currency->format($orderTotal['value'], $order_data['currency_code'], $order_data['currency_value'], false);
+            $this->data['order_items'][] = new OrderItem(html_entity_decode($orderTotal['title'], ENT_QUOTES, 'UTF-8'), $orderTotalAmount, 1, $orderTotal['tax_rate'] / 100, $orderTotal['code']);
         }
 
         return $this->data['order_items'];
@@ -278,7 +279,7 @@ class ControllerPaymentPaysondirect extends Controller {
                 }
                 $this->load->model('total/' . $result['code']);
 
-                @$this->{'model_total_' . $result['code']}->getTotal($total_data, $total, $taxes);
+                $this->{'model_total_' . $result['code']}->getTotal($total_data, $total, $taxes);
 
                 foreach ($taxes as $tax_id => $value) {
                     $amount += $value;
