@@ -89,9 +89,15 @@ class ControllerPaymentPaysondirect extends Controller {
         if ($orderId == 0)
             $orderId = $this->session->data['order_id'];
 
+        $order_info = $this->model_checkout_order->getOrder($orderId);
+
         if ($paymentType == "INVOICE") {
             if ($invoiceStatus == "ORDERCREATED") {
-                $this->model_checkout_order->confirm($orderId, $this->config->get('paysoninvoice_order_status_id'));
+                if (!$order_info['order_status_id']) {
+                    $this->model_checkout_order->confirm($orderId, $this->config->get('paysoninvoice_order_status_id'));
+                } else {
+                    $this->model_checkout_order->update($orderId, $this->config->get('paysoninvoice_order_status_id'));
+                }
                 $this->db->query("UPDATE `" . DB_PREFIX . "order` SET 
 										shipping_firstname  = '" . $paymentDetails->getShippingAddressName() . "',
 										shipping_lastname 	= '',
@@ -105,13 +111,16 @@ class ControllerPaymentPaysondirect extends Controller {
             }
         } elseif ($paymentType == "TRANSFER") {
             if ($transferStatus == "COMPLETED") {
-                $this->model_checkout_order->confirm($orderId, $this->config->get('paysondirect_order_status_id'));
+                if (!$order_info['order_status_id']) {
+                    $this->model_checkout_order->confirm($orderId, $this->config->get('paysondirect_order_status_id'));
+                } else {
+                    $this->model_checkout_order->update($orderId, $this->config->get('paysondirect_order_status_id'));
+                }
                 return true;
             }
         }
 
         if (($paymentType == "INVOICE" || $paymentType == "TRANSFER") && $transferStatus == "ERROR") {
-            $this->model_checkout_order->confirm($orderId, 8);
             $this->paysonApiError($this->language->get('text_denied'));
             return false;
         }
