@@ -5,6 +5,8 @@ class ControllerPaymentPaysondirect extends Controller {
     private $testMode;
     private $api;
     private $isInvoice;
+    
+    const MODULE_VERSION = '2.1';
 
     function __construct($registry) {
         parent::__construct($registry);
@@ -189,9 +191,9 @@ class ControllerPaymentPaysondirect extends Controller {
         require_once 'payson/paysonapi.php';
 
         if (!$this->testMode) {
-            $credentials = new PaysonCredentials(trim($this->config->get('payson_agent_id')), trim($this->config->get('payson_md5')), null, 'PAYSON-MODULE-INFO: payson_opencart|2.0|' . VERSION);
+            $credentials = new PaysonCredentials(trim($this->config->get('payson_agent_id')), trim($this->config->get('payson_md5')), null, 'PAYSON-MODULE-INFO: payson_opencart|' . self::MODULE_VERSION . '|' . VERSION);
         } else {
-            $credentials = new PaysonCredentials(1, 'fddb19ac-7470-42b6-a91d-072cb1495f0a', null, 'PAYSON-MODULE-INFO: payson_opencart|2.0|' . VERSION);
+            $credentials = new PaysonCredentials(1, 'fddb19ac-7470-42b6-a91d-072cb1495f0a', null, 'PAYSON-MODULE-INFO: payson_opencart|' . self::MODULE_VERSION . '|' . VERSION);
         }
 
         $api = new PaysonApi($credentials, $this->testMode);
