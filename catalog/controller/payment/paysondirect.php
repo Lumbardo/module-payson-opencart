@@ -75,12 +75,13 @@ class ControllerPaymentPaysondirect extends Controller {
             if ($paymentDetailsResponse->getResponseEnvelope()->wasSuccessful()) {
                 $paymentDetails = $paymentDetailsResponse->getPaymentDetails();
                 
-                $secureWordFromDetails = explode('-', $paymentDetails->getTrackingId());
+                // Get the secure word as hash and order id
+                $trackingFromDetails = explode('-', $paymentDetails->getTrackingId());
                 
-                if($secureWordFromShop != $secureWordFromDetails[0])
+                if($secureWordFromShop != $trackingFromDetails[0])
                     $this->paysonApiError ($this->language->get('Call doesnt seem to come from Payson. Please contact store owner if this should be a valid call'));
                 
-                if ($this->handlePaymentDetails($paymentDetails))
+                if ($this->handlePaymentDetails($paymentDetails, $trackingFromDetails[1]))
                     $this->redirect($this->url->link('checkout/success'));
                 else
                     $this->redirect($this->url->link('checkout/checkout'));
@@ -145,14 +146,13 @@ class ControllerPaymentPaysondirect extends Controller {
         require_once 'payson/paysonapi.php';
 
         if (!$this->testMode) {
-            $sender = new Sender($this->data['sender_email'], $this->data['sender_first_name'], $this->data['sender_last_name']);
             $receiver = new Receiver(trim($this->config->get('payson_user_name')), $this->data['amount']);
         } else {
-            $sender = new Sender('test-shopper@payson.se', $this->data['sender_first_name'], $this->data['sender_last_name']);
             $receiver = new Receiver('testagent-1@payson.se', $this->data['amount']);
         }
 
-
+        $sender = new Sender($this->data['sender_email'], $this->data['sender_first_name'], $this->data['sender_last_name']);
+        
         $receivers = array($receiver);
 
         $payData = new PayData($this->data['ok_url'], $this->data['cancel_url'], $this->data['ipn_url'], $this->data['store_name'] . ' Order: ' . $this->data['order_id'], $sender, $receivers);
@@ -179,8 +179,7 @@ class ControllerPaymentPaysondirect extends Controller {
         $payData->setFundingConstraints($constraints);
         $payData->setGuaranteeOffered('NO');
         $payData->setTrackingId($this->data['salt']);
-        //$payData->setTrackingId($this->data['order_id']);
-
+        
         $payResponse = $this->api->pay($payData);
 
         if ($payResponse->getResponseEnvelope()->wasSuccessful()) {  //ack = SUCCESS och token  = token = N�got
