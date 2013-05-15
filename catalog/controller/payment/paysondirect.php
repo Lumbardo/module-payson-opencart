@@ -5,7 +5,7 @@ class ControllerPaymentPaysondirect extends Controller {
     private $testMode;
     private $api;
     private $isInvoice;
-    
+
     const MODULE_VERSION = '2.1';
 
     function __construct($registry) {
@@ -67,13 +67,24 @@ class ControllerPaymentPaysondirect extends Controller {
         $paymentDetails = null;
 
         if (isset($this->request->get['TOKEN'])) {
+            
+            $secureWordFromShop = md5($this->config->get('payson_secure_word')) . '1';
 
-            $paymentDetails = $this->api->paymentDetails(new PaymentDetailsData($this->request->get['TOKEN']))->getPaymentDetails();
+            $paymentDetailsResponse = $this->api->paymentDetails(new PaymentDetailsData($this->request->get['TOKEN']));
 
-            if ($this->handlePaymentDetails($paymentDetails))
-                $this->redirect($this->url->link('checkout/success'));
-            else
-                $this->redirect($this->url->link('checkout/checkout'));
+            if ($paymentDetailsResponse->getResponseEnvelope()->wasSuccessful()) {
+                $paymentDetails = $paymentDetailsResponse->getPaymentDetails();
+                
+                $secureWordFromDetails = explode('-', $paymentDetails->getTrackingId());
+                
+                if($secureWordFromShop != $secureWordFromDetails[0])
+                    $this->paysonApiError ($this->language->get('Call doesnt seem to come from Payson. Please contact store owner if this should be a valid call'));
+                
+                if ($this->handlePaymentDetails($paymentDetails))
+                    $this->redirect($this->url->link('checkout/success'));
+                else
+                    $this->redirect($this->url->link('checkout/checkout'));
+            }
         }
     }
 
@@ -420,7 +431,7 @@ class ControllerPaymentPaysondirect extends Controller {
 								</script>
 							</head>
 					</html>';
-        print_r($error_code);
+        echo ($error_code);
         exit;
     }
 

@@ -13,11 +13,19 @@ class PaymentDetailsResponse {
         $this->responseEnvelope = new ResponseEnvelope($responseData);
         $this->paymentDetails = new PaymentDetails($responseData);
     }
-
+    
+    /**
+     * 
+     * @return ResponseEnvelope
+     */
     public function getResponseEnvelope() {
         return $this->responseEnvelope;
     }
 
+    /**
+     * 
+     * @return PaymentDetails
+     */
     public function getPaymentDetails() {
         return $this->paymentDetails;
     }
