@@ -16,7 +16,7 @@ class ModelPaymentPaysoninvoice extends Model {
         }
 
         $shippingCost = 0;
-        if(isset($this->session->data['shipping_method']))
+        if (isset($this->session->data['shipping_method']))
             $shippingCost = preg_replace('/[^0-9.,]/', '', $this->session->data['shipping_method']['text']);
         $cartTotal = $this->cart->getTotal() + str_replace(",", ".", $shippingCost);
         if (strtoupper($this->session->data['currency']) == 'SEK') {
@@ -24,8 +24,8 @@ class ModelPaymentPaysoninvoice extends Model {
                 return false;
         }
         else
-            return false;        
-        
+            return false;
+
         $method_data = array();
 
         $this->load->model('total/paysoninvoice_fee');
