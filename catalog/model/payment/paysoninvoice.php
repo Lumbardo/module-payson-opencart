@@ -30,7 +30,6 @@ class ModelPaymentPaysoninvoice extends Model {
 
         $this->load->model('total/paysoninvoice_fee');
 
-
         $total = 0;
         $taxAmount = 0;
 

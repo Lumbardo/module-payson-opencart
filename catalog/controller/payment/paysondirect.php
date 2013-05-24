@@ -22,7 +22,24 @@ class ControllerPaymentPaysondirect extends Controller {
 
     public function index() {
 
+        $this->load->language('payment/paysondirect');
         $this->data['button_confirm'] = $this->language->get('button_confirm');
+
+        if ($this->isInvoice) {
+            $total = 0;
+            $taxAmount = 0;
+
+            if ($this->config->get('paysoninvoice_fee_tax_class_id')) {
+                $tax_rates = $this->tax->getRates($this->config->get('paysoninvoice_fee_fee'), $this->config->get('paysoninvoice_fee_tax_class_id'));
+
+                foreach ($tax_rates as $tax_rate) {
+                    $taxAmount += $tax_rate['amount'];
+                }
+            }
+            $total = $this->config->get('paysoninvoice_fee_fee') + $taxAmount;
+
+            $this->data['text_invoice_terms'] = sprintf($this->language->get('text_invoice_terms'), $total);
+        }
 
         if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/payment/paysondirect.tpl')) {
             $this->template = $this->config->get('config_template') . '/template/payment/paysondirect.tpl';
@@ -55,7 +72,6 @@ class ControllerPaymentPaysondirect extends Controller {
         $this->data['sender_last_name'] = html_entity_decode($order_data['lastname'], ENT_QUOTES, 'UTF-8');
 
         //Call PaysonAPI    	
-
         $this->data['action'] = $this->getPaymentURL();
 
         echo $this->data['action'];
@@ -67,20 +83,20 @@ class ControllerPaymentPaysondirect extends Controller {
         $paymentDetails = null;
 
         if (isset($this->request->get['TOKEN'])) {
-            
+
             $secureWordFromShop = md5($this->config->get('payson_secure_word')) . '1';
 
             $paymentDetailsResponse = $this->api->paymentDetails(new PaymentDetailsData($this->request->get['TOKEN']));
 
             if ($paymentDetailsResponse->getResponseEnvelope()->wasSuccessful()) {
                 $paymentDetails = $paymentDetailsResponse->getPaymentDetails();
-                
+
                 // Get the secure word as hash and order id
                 $trackingFromDetails = explode('-', $paymentDetails->getTrackingId());
-                
-                if($secureWordFromShop != $trackingFromDetails[0])
-                    $this->paysonApiError ($this->language->get('Call doesnt seem to come from Payson. Please contact store owner if this should be a valid call'));
-                
+
+                if ($secureWordFromShop != $trackingFromDetails[0])
+                    $this->paysonApiError($this->language->get('Call doesnt seem to come from Payson. Please contact store owner if this should be a valid call'));
+
                 if ($this->handlePaymentDetails($paymentDetails, $trackingFromDetails[1]))
                     $this->redirect($this->url->link('checkout/success'));
                 else
@@ -152,7 +168,7 @@ class ControllerPaymentPaysondirect extends Controller {
         }
 
         $sender = new Sender($this->data['sender_email'], $this->data['sender_first_name'], $this->data['sender_last_name']);
-        
+
         $receivers = array($receiver);
 
         $payData = new PayData($this->data['ok_url'], $this->data['cancel_url'], $this->data['ipn_url'], $this->data['store_name'] . ' Order: ' . $this->data['order_id'], $sender, $receivers);
@@ -179,7 +195,7 @@ class ControllerPaymentPaysondirect extends Controller {
         $payData->setFundingConstraints($constraints);
         $payData->setGuaranteeOffered('NO');
         $payData->setTrackingId($this->data['salt']);
-        
+
         $payResponse = $this->api->pay($payData);
 
         if ($payResponse->getResponseEnvelope()->wasSuccessful()) {  //ack = SUCCESS och token  = token = N�got
@@ -244,16 +260,7 @@ class ControllerPaymentPaysondirect extends Controller {
             }
             $product_price = $this->currency->format($product['price'], $order_data['currency_code'], $order_data['currency_value'], false);
 
-            $tax_rates_product = $this->tax->getRates($product['price'], $product['tax_class_id']);
-
-            $tax_amount = 0;
-            foreach ($tax_rates_product as $tax_rate) {
-                if ($tax_rate['type'] == "F")
-                    $this->data['order_items'][] = new OrderItem(html_entity_decode($tax_rate['name'], ENT_QUOTES, 'UTF-8'), $this->currency->format($tax_rate['amount'], $order_data['currency_code'], $order_data['currency_value'], false), 1, 0, 'Fixed tax rate');
-                else {
-                    $tax_amount += $this->currency->format($tax_rate['amount'], $order_data['currency_code'], $order_data['currency_value'], false);
-                }
-            }
+            $tax_amount = $this->tax->getTax($product_price, $product['tax_class_id']);
 
             $this->data['order_items'][] = new OrderItem(html_entity_decode($product['name'], ENT_QUOTES, 'UTF-8'), $product_price, $product['quantity'], ($tax_amount + $product_price) / ($product_price) - 1, isset($product['sku']) ? $product['sku'] : $product['model']);
         }
