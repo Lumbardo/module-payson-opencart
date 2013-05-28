@@ -6,7 +6,7 @@ class ControllerPaymentPaysondirect extends Controller {
     private $api;
     private $isInvoice;
 
-    const MODULE_VERSION = '2.3';
+    const MODULE_VERSION = '2.4';
 
     function __construct($registry) {
         parent::__construct($registry);
@@ -101,6 +101,8 @@ class ControllerPaymentPaysondirect extends Controller {
                     $this->redirect($this->url->link('checkout/success'));
                 else
                     $this->redirect($this->url->link('checkout/checkout'));
+            } else {
+                $this->logErrorsAndReturnThem($paymentDetailsResponse);
             }
         }
     }
@@ -109,7 +111,7 @@ class ControllerPaymentPaysondirect extends Controller {
      * 
      * @param PaymentDetails $paymentDetails
      */
-    private function handlePaymentDetails($paymentDetails, $orderId = 0) {
+    private function handlePaymentDetails($paymentDetails, $orderId = 0, $ipnCall = false) {
         $this->load->model('checkout/order');
 
         $paymentType = $paymentDetails->getType();
@@ -151,6 +153,8 @@ class ControllerPaymentPaysondirect extends Controller {
         }
 
         if (($paymentType == "INVOICE" || $paymentType == "TRANSFER") && $transferStatus == "ERROR") {
+            if ($ipnCall)
+                $this->writeToLog('Order created with error status.&#10;Purchase type:&#9;&#9;' . $paymentType . '&#10;Payson reference:&#9;' . $paymentDetails->getPurchaseId() . '&#10;Order id:&#9;&#9;&#9;&#9;' . $orderId);
             $this->paysonApiError($this->language->get('text_denied'));
             return false;
         }
@@ -202,14 +206,29 @@ class ControllerPaymentPaysondirect extends Controller {
             //return the url: https://www.payson.se/paysecure/?token=#
             return $this->api->getForwardPayUrl($payResponse);
         } else {
-            $error = $payResponse->getResponseEnvelope()->getErrors();
-            if ($this->config->get('payson_logg') == 1) {
-                $this->log->write($error[0]->getErrorId() . '<br />' . $error[0]->getMessage() . '<br />' . $error[0]->getParameter());
-            }
-            if ($error[0]->getErrorId()) {
+            $errors = $this->logErrorsAndReturnThem($payResponse);
+
+            if ($errors[0]->getErrorId()) {
                 $this->response->addHeader("HTTP/1.0 500 Internal Server Error");
-                $this->response->setOutput($error[0]->getMessage());
+                $this->response->setOutput($errors[0]->getMessage());
             }
+        }
+    }
+
+    function logErrorsAndReturnThem($response) {
+        $errors = $response->getResponseEnvelope()->getErrors();
+
+        if ($this->config->get('payson_logg') == 1) {
+            foreach ($errors as $error)
+                $this->writeToLog('Error id:&#9;&#9;&#9;' . $error->getErrorId() . '&#10;Message:&#9;&#9;' . $error->getMessage() . '&#10;Parameter:&#9;&#9;' . $error->getParameter() . '&#10;');
+        }
+
+        return $errors;
+    }
+
+    function writeToLog($message) {
+        if ($this->config->get('payson_logg') == 1) {
+            $this->log->write('PAYSON&#10;' . $message . '&#10;');
         }
     }
 
@@ -234,35 +253,30 @@ class ControllerPaymentPaysondirect extends Controller {
     private function getOrderItems() {
         require_once 'payson/orderitem.php';
 
-        $products_data = $this->cart->getProducts();
+        $orderId = $this->session->data['order_id'];
+
         $order_data = $this->model_checkout_order->getOrder($this->session->data['order_id']);
 
-        foreach ($products_data as $product) {
-            $option_data = array();
+        $product_query = $this->db->query("SELECT `order_product_id`, `name`, `model`, `price`, `quantity`, `tax` / `price` AS 'tax_rate' FROM `" . DB_PREFIX . "order_product` WHERE `order_id` = " . (int) $orderId)->rows;
 
-            foreach ($product['option'] as $option) {
-                //start
-                if ($option['type'] != 'file') {
-                    $value = $option['option_value'];
-                } else {
-                    $filename = $this->encryption->decrypt($option['option_value']);
+        foreach ($product_query as $product) {
 
-                    $value = utf8_substr($filename, 0, utf8_strrpos($filename, '.'));
+            $productOptions = $this->db->query("SELECT name, value FROM " . DB_PREFIX . 'order_option WHERE order_id = ' . (int) $orderId . ' AND order_product_id=' . (int) $product['order_product_id'])->rows;
+            $optionsArray = array();
+            if ($productOptions) {
+                foreach ($productOptions as $option) {
+                    $optionsArray[] = $option['name'] . ': ' . $option['value'];
                 }
-
-                $option_data[] = $option['name'] . ': ' . (utf8_strlen($value) > 20 ? utf8_substr($value, 0, 20) . '..' : $value);
             }
 
-            if ($option_data) {
-                $name = $product['name'] . ' ' . implode('; ', $option_data);
-            } else {
-                $name = $product['name'];
-            }
+            $productTitle = $product['name'];
+
+            if (!empty($optionsArray))
+                $productTitle .= ' | ' . join('; ', $optionsArray);
+
             $product_price = $this->currency->format($product['price'], $order_data['currency_code'], $order_data['currency_value'], false);
 
-            $tax_amount = $this->tax->getTax($product_price, $product['tax_class_id']);
-
-            $this->data['order_items'][] = new OrderItem(html_entity_decode($product['name'], ENT_QUOTES, 'UTF-8'), $product_price, $product['quantity'], ($tax_amount + $product_price) / ($product_price) - 1, isset($product['sku']) ? $product['sku'] : $product['model']);
+            $this->data['order_items'][] = new OrderItem(html_entity_decode($productTitle, ENT_QUOTES, 'UTF-8'), $product_price, $product['quantity'], $product['tax_rate'], $product['model']);
         }
 
         $orderTotals = $this->getOrderTotals();
@@ -294,10 +308,8 @@ class ControllerPaymentPaysondirect extends Controller {
         }
 
         array_multisort($sort_order, SORT_ASC, $results);
-        $ignoredOrderTotals = array_map('trim', explode(',', $this->config->get('paysondirect_ignored_order_totals')));
+
         foreach ($results as $result) {
-            if (in_array($result['code'], $ignoredOrderTotals))
-                continue;
 
             if ($this->config->get($result['code'] . '_status')) {
                 $amount = 0;
@@ -339,6 +351,13 @@ class ControllerPaymentPaysondirect extends Controller {
             }
         }
 
+        $ignoredOrderTotals = array_map('trim', explode(',', $this->config->get('paysondirect_ignored_order_totals')));
+        foreach ($total_data as $key => $orderTotal) {
+            if (in_array($orderTotal['code'], $ignoredOrderTotals)) {
+                unset($total_data[$key]);
+            }
+        }
+
         return $total_data;
     }
 
@@ -365,15 +384,15 @@ class ControllerPaymentPaysondirect extends Controller {
                 $this->storeIPNResponse($response->getPaymentDetails(), $orderId);
 
 
-                $this->handlePaymentDetails($response->getPaymentDetails(), $orderId);
+                $this->handlePaymentDetails($response->getPaymentDetails(), $orderId, true);
             } else {
                 if ($this->config->get('payson_logg') == 1) {
-                    $this->log->write('<Payson Direct ipn> The secure word from the Tracking is incorrect.');
+                    $this->writeToLog('The secure word could not be verified.');
                 }
             }
         } else {
             if ($this->config->get('payson_logg') == 1) {
-                $this->log->write('<Payson Direct ipn>The response could not validate.');
+                $this->writeToLog('The IPN response from Payson could not be validated.');
             }
         }
     }
