@@ -6,7 +6,7 @@ class ControllerPaymentPaysondirect extends Controller {
     private $api;
     private $isInvoice;
 
-    const MODULE_VERSION = '2.4';
+    const MODULE_VERSION = '2.5';
 
     function __construct($registry) {
         parent::__construct($registry);
@@ -21,7 +21,6 @@ class ControllerPaymentPaysondirect extends Controller {
     }
 
     public function index() {
-
         $this->load->language('payment/paysondirect');
         $this->data['button_confirm'] = $this->language->get('button_confirm');
 
@@ -94,9 +93,10 @@ class ControllerPaymentPaysondirect extends Controller {
                 // Get the secure word as hash and order id
                 $trackingFromDetails = explode('-', $paymentDetails->getTrackingId());
 
-                if ($secureWordFromShop != $trackingFromDetails[0])
-                    $this->paysonApiError($this->language->get('Call doesnt seem to come from Payson. Please contact store owner if this should be a valid call'));
-
+                if ($secureWordFromShop != $trackingFromDetails[0]) {
+                    $this->writeToLog($this->language->get('Call doesnt seem to come from Payson. Please contact store owner if this should be a valid call.'), $paymentDetails);
+                    $this->paysonApiError($this->language->get('Call doesnt seem to come from Payson. Please contact store owner if this should be a valid call.'));
+                }
                 if ($this->handlePaymentDetails($paymentDetails, $trackingFromDetails[1]))
                     $this->redirect($this->url->link('checkout/success'));
                 else
@@ -112,6 +112,7 @@ class ControllerPaymentPaysondirect extends Controller {
      * @param PaymentDetails $paymentDetails
      */
     private function handlePaymentDetails($paymentDetails, $orderId = 0, $ipnCall = false) {
+        $this->load->language('payment/paysondirect');
         $this->load->model('checkout/order');
 
         $paymentType = $paymentDetails->getType();
@@ -154,7 +155,7 @@ class ControllerPaymentPaysondirect extends Controller {
 
         if (($paymentType == "INVOICE" || $paymentType == "TRANSFER") && $transferStatus == "ERROR") {
             if ($ipnCall)
-                $this->writeToLog('Order created with error status.&#10;Purchase type:&#9;&#9;' . $paymentType . '&#10;Payson reference:&#9;' . $paymentDetails->getPurchaseId() . '&#10;Order id:&#9;&#9;&#9;&#9;' . $orderId);
+                $this->writeToLog('Order created with error status.&#10;Purchase type:&#9;&#9;' . $paymentType . '&#10;Order id:&#9;&#9;&#9;&#9;' . $orderId, $paymentDetails);
             $this->paysonApiError($this->language->get('text_denied'));
             return false;
         }
@@ -165,6 +166,8 @@ class ControllerPaymentPaysondirect extends Controller {
     private function getPaymentURL() {
         require_once 'payson/paysonapi.php';
 
+        $this->load->language('payment/paysondirect');
+        
         if (!$this->testMode) {
             $receiver = new Receiver(trim($this->config->get('payson_user_name')), $this->data['amount']);
         } else {
@@ -226,9 +229,16 @@ class ControllerPaymentPaysondirect extends Controller {
         return $errors;
     }
 
-    function writeToLog($message) {
+    /**
+     * 
+     * @param string $message
+     * @param PaymentDetails $paymentDetails
+     */
+    function writeToLog($message, $paymentDetails = False) {
+        $paymentDetailsFormat = "Payson reference:&#9;%s&#10;Correlation id:&#9;%s&#10;";
         if ($this->config->get('payson_logg') == 1) {
-            $this->log->write('PAYSON&#10;' . $message . '&#10;');
+
+            $this->log->write('PAYSON&#10;' . $message . '&#10;' . ($paymentDetails != false ? sprintf($paymentDetailsFormat, $paymentDetails->getPurchaseId(), $paymentDetails->getCorrelationId()) : ''));
         }
     }
 
@@ -253,12 +263,15 @@ class ControllerPaymentPaysondirect extends Controller {
     private function getOrderItems() {
         require_once 'payson/orderitem.php';
 
+        $this->load->language('payment/paysondirect');
+        
         $orderId = $this->session->data['order_id'];
 
         $order_data = $this->model_checkout_order->getOrder($this->session->data['order_id']);
-
-        $product_query = $this->db->query("SELECT `order_product_id`, `name`, `model`, `price`, `quantity`, `tax` / `price` AS 'tax_rate' FROM `" . DB_PREFIX . "order_product` WHERE `order_id` = " . (int) $orderId)->rows;
-
+        
+        $query = "SELECT `order_product_id`, `name`, `model`, `price`, `quantity`, `tax` / `price` AS 'tax_rate' FROM `" . DB_PREFIX . "order_product` WHERE `order_id` = " . (int) $orderId . " UNION ALL SELECT 0, '" . $this->language->get('text_gift_card') . "', `code`, `amount`, '1', 0.00 FROM `" . DB_PREFIX . "order_voucher` WHERE `order_id` = " . (int) $orderId;
+        $product_query = $this->db->query($query)->rows;
+        
         foreach ($product_query as $product) {
 
             $productOptions = $this->db->query("SELECT name, value FROM " . DB_PREFIX . 'order_option WHERE order_id = ' . (int) $orderId . ' AND order_product_id=' . (int) $product['order_product_id'])->rows;
@@ -285,7 +298,7 @@ class ControllerPaymentPaysondirect extends Controller {
             $orderTotalAmount = $this->currency->format($orderTotal['value'], $order_data['currency_code'], $order_data['currency_value'], false);
             $this->data['order_items'][] = new OrderItem(html_entity_decode($orderTotal['title'], ENT_QUOTES, 'UTF-8'), $orderTotalAmount, 1, $orderTotal['tax_rate'] / 100, $orderTotal['code']);
         }
-
+        
         return $this->data['order_items'];
     }
 
@@ -368,7 +381,7 @@ class ControllerPaymentPaysondirect extends Controller {
         $orderId = 0;
 
         // Set up API
-        //$this->myFile($postData);
+        
         // Validate the request
         $response = $this->api->validate($postData);
         //OBS!  token �r samma i ipn och return
@@ -380,21 +393,16 @@ class ControllerPaymentPaysondirect extends Controller {
             if ($salt[0] == (md5($this->config->get('payson_secure_word')) . '1')) {
                 $orderId = $salt[count($salt) - 1];
 
-
                 $this->storeIPNResponse($response->getPaymentDetails(), $orderId);
 
 
                 $this->handlePaymentDetails($response->getPaymentDetails(), $orderId, true);
-            } else {
-                if ($this->config->get('payson_logg') == 1) {
-                    $this->writeToLog('The secure word could not be verified.');
-                }
             }
-        } else {
-            if ($this->config->get('payson_logg') == 1) {
-                $this->writeToLog('The IPN response from Payson could not be validated.');
-            }
+            else
+                $this->writeToLog('The secure word could not be verified.', $response->getPaymentDetails());
         }
+        else
+            $this->writeToLog('The IPN response from Payson could not be validated.', $response->getPaymentDetails());
     }
 
     /**
