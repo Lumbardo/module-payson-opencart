@@ -436,6 +436,7 @@ class ControllerPaymentPaysondirect extends Controller {
 
     public function languagePaysondirect() {
         switch (strtoupper($this->data['language_code'])) {
+            case "SE":
             case "SV":
                 return "SV";
             case "FI":
