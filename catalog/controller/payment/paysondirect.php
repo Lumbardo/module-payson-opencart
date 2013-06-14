@@ -37,7 +37,7 @@ class ControllerPaymentPaysondirect extends Controller {
             }
             $total = $this->config->get('paysoninvoice_fee_fee') + $taxAmount;
 
-            $this->data['text_invoice_terms'] = sprintf($this->language->get('text_invoice_terms'), $total);
+            $this->data['text_invoice_terms'] = sprintf($this->language->get('text_invoice_terms'), $this->config->get('paysoninvoice_fee_status') ? $total : 0);
         }
 
         if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/payment/paysondirect.tpl')) {

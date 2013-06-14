@@ -45,7 +45,7 @@ class ModelPaymentPaysoninvoice extends Model {
         if ($status) {
             $method_data = array(
                 'code' => 'paysoninvoice',
-                'title' => sprintf($this->language->get('text_title'), $total),
+                'title' => sprintf($this->language->get('text_title'),  $this->config->get('paysoninvoice_fee_status') ? $total : 0),
                 'sort_order' => $this->config->get('paysoninvoice_sort_order')
             );
         }
