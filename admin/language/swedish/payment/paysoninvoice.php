@@ -15,6 +15,6 @@ $_['entry_sort_order']   			= 'Sort Order:';
 $_['entry_status']       			= 'Status:';
 
 $_['entry_order_status']       		= 'Orderstatus:';
-
+$_['entry_geo_zone']     		= 'Geo Zone:';
 $_['config_message']                            = 'Denna modul har endast konfigrationen nedan. För att använda Payson Faktura krävs ett fakturaavtal med Payson samt att denna modul är aktiverad. Dina uppgifter fyller du sedan i <a href="%s">här</a>'
 ?>
