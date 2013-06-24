@@ -50,6 +50,19 @@
                                 <?php } ?>
                             </select></td>
                     </tr>
+                    <tr>
+                        <td><?php echo $entry_geo_zone; ?></td>
+                        <td><select name="paysoninvoice_geo_zone_id">
+                            <option value="0"><?php echo $text_all_zones; ?></option>
+                            <?php foreach ($geo_zones as $geo_zone) { ?>
+                            <?php if ($geo_zone['geo_zone_id'] == $paysoninvoice_geo_zone_id) { ?>
+                            <option value="<?php echo $geo_zone['geo_zone_id']; ?>" selected="selected"><?php echo $geo_zone['name']; ?></option>
+                            <?php } else { ?>
+                            <option value="<?php echo $geo_zone['geo_zone_id']; ?>"><?php echo $geo_zone['name']; ?></option>
+                            <?php } ?>
+                            <?php } ?>
+                          </select></td>
+                    </tr>
                 </table>
             </form>
         </div>
