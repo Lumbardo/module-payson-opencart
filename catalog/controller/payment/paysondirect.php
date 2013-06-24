@@ -6,7 +6,7 @@ class ControllerPaymentPaysondirect extends Controller {
     private $api;
     private $isInvoice;
 
-    const MODULE_VERSION = '2.6';
+    const MODULE_VERSION = '2.7';
 
     function __construct($registry) {
         parent::__construct($registry);
