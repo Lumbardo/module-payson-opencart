@@ -7,9 +7,9 @@ INSTALLATION:
 
 * You should have a BACKUP of your web store and database. 
 
-* Download the module �payson_1.5_for_opencart� on your PC. 
+* Download the module for OpenCart on your PC. 
 
-* extract the module and go to the file payson_1.5_for_opencart/ 
+* extract the module. 
 
 * merge the folders admin and catalog to the root directory of your store. 
 
@@ -31,7 +31,7 @@ CONFIGURATION
 
 * Go to Extensions->Payments and Payson Invoice.
 
-* Enter your Email, Agent ID,  MD5 Key and secure word  before enabling the module.
+* Enable the module If you have a contract for Payson Invoice. Payson Invoice requires a separate contract. Please contact Payson for more information.
 
 * Click Save.
 
@@ -62,56 +62,4 @@ UPGRADATION:
 
 * remove the files:
 
-****Admin****
-
-Admin/contoller/payment/paysondirect.php
-Admin/contoller/payment/paysoninvoice.php
-
-Admin/contoller/total/paysoninvoice.fee.php (new)
-
-Admin/language/english/payment/paysondirect.php
-Admin/language/english/payment/paysoninvoice.php
-Admin/language/swedish/payment/paysondirect.php
-Admin/language/swedish/payment/paysoninvoice.php
-
-Admin/language/english/total/paysoninvoice.fee.php  (new)
-Admin/language/swedish/total/paysoninvoice.fee.php (new)
-
-Admin/model/module/paysondirect.php
-Admin/model/module/paysoninvoice.php
-
-Admin/view/image/payment/payson.png
-Admin/view/image/payment/paysoninvoice.png
-
-Admin/view/template/payment/paysondirect.tpl
-Admin/view/template/payment/paysoninvoice.tpl
-
-Admin/view/template/total/paysoninvoice.fee.tpl (new)
-
-****Catalog****
-
-catalog/contoller/payment/payson (folder)
-catalog/contoller/payment/paysondirect.php
-catalog/contoller/payment/paysoninvoice.php
-
-catalog/language/english/payment/paysondirect.php
-catalog/language/english/payment/paysoninvoice.php
-catalog/language/english/total/paysoninvoice_fee.php
-
-catalog/language/swedish/payment/paysondirect.php
-catalog/language/swedish/payment/paysoninvoice.php
-catalog/language/swedish/total/paysoninvoice_fee.php
-
-catalog/model/payment/paysondirect.php
-catalog/model/payment/paysoninvoice.php
-catalog/model/total/paysoninvoice_fee.php
-
-catalog/view/theme/default/image/payment/payson.png
-catalog/view/theme/default/image/payment/paysoninvoice.png
-
-catalog/view/theme/default/template/payment/paysondirect.tpl
-catalog/view/theme/default/template/payment/paysoninvoice.tpl
-
 * Go to INSTALLATION in this document. 
-
-
