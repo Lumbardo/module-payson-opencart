@@ -138,7 +138,7 @@
           </tr>
                     <tr>
             <td><?php echo $entry_totals_to_ignore; ?></td>
-            <td><input type="text" name="paysondirect_ignored_order_totals" value="<?php echo ($paysondirect_ignored_order_totals == '' ? 'sub_total, total, taxes' : $paysondirect_ignored_order_totals); ?>" /></td>
+            <td><input type="text" name="paysondirect_ignored_order_totals" value="<?php echo ($paysondirect_ignored_order_totals == '' ? '' : $paysondirect_ignored_order_totals); ?>" /></td>
           </tr>    
           
         </table>
