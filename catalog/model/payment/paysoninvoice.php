@@ -40,13 +40,13 @@ class ModelPaymentPaysoninvoice extends Model {
                     $taxAmountFee += $tax_rate['amount'];
                 }
             }
-            $total = $this->config->get('paysoninvoice_fee_fee') + $taxAmountFee;
+            $totalFee = $this->config->get('paysoninvoice_fee_fee') + $taxAmountFee;
         }
 
         if ($status) {
             $method_data = array(
                 'code' => 'paysoninvoice',
-                'title' => sprintf($this->language->get('text_title'),  $this->config->get('paysoninvoice_fee_status') ? $total : 0),
+                'title' => sprintf($this->language->get('text_title'),  round($this->currency->convert($totalFee, strtoupper($this->config->get('config_currency')), 'SEK'), 2)),
                 'sort_order' => $this->config->get('paysoninvoice_sort_order')
             );
         }
