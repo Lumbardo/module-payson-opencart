@@ -6,7 +6,7 @@ class ControllerPaymentPaysondirect extends Controller {
     private $api;
     private $isInvoice;
 
-    const MODULE_VERSION = '2.7';
+    const MODULE_VERSION = '2.8';
 
     function __construct($registry) {
         parent::__construct($registry);
@@ -243,7 +243,7 @@ class ControllerPaymentPaysondirect extends Controller {
     }
 
     private function getAPIInstance() {
-        require_once 'payson/paysonapi.php';
+       require_once 'payson/paysonapi.php';
 
         if (!$this->testMode) {
             $credentials = new PaysonCredentials(trim($this->config->get('payson_agent_id')), trim($this->config->get('payson_md5')), null, 'payson_opencart|' . self::MODULE_VERSION . '|' . VERSION);
@@ -296,9 +296,9 @@ class ControllerPaymentPaysondirect extends Controller {
 
         foreach ($orderTotals as $orderTotal) {
             $orderTotalAmount = $this->currency->format($orderTotal['value'], $order_data['currency_code'], $order_data['currency_value'], false);
-            $this->data['order_items'][] = new OrderItem(html_entity_decode($orderTotal['title'], ENT_QUOTES, 'UTF-8'), $orderTotalAmount, 1, $orderTotal['tax_rate'] / 100, $orderTotal['code']);
+                $this->data['order_items'][] = new OrderItem(html_entity_decode($orderTotal['title'], ENT_QUOTES, 'UTF-8'), $orderTotalAmount, 1, $orderTotal['tax_rate'] / 100, $orderTotal['code']);
         }
-        
+       
         return $this->data['order_items'];
     }
 
