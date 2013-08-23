@@ -51,57 +51,6 @@ class ModelPaymentPaysoninvoice extends Model {
             );
         }
         return $method_data;
-    }
-    
-    public function setPaysonOrderDb($ipn_respons) {
-        $this->db->query("INSERT INTO " . DB_PREFIX . "payson_order SET 
-	  						order_id                      = '" . $ipn_respons['order_id'] . "', 
-	  						valid                         = '" . $ipn_respons['valid'] . "', 
-	  						added 						  = NOW(), 
-	  						updated                       = NOW(), 
-	  						ipn_status                    = '" . $ipn_respons['ipn_status'] . "', 	
-	  						sender_email                  = '" . $ipn_respons['sender_email'] . "', 
-	  						currency_code                 = '" . $ipn_respons['currency_code'] . "',
-	  						tracking_id                   = '" . $ipn_respons['tracking_id'] . "',
-	  						type                          = '" . $ipn_respons['type'] . "',
-	  						purchase_id                   = '" . $ipn_respons['purchase_id'] . "',
-	  						invoice_status                = '" . $ipn_respons['invoice_status'] . "',
-	  						customer                      = '" . $ipn_respons['customer'] . "', 
-	  						shippingAddress_name          = '" . $ipn_respons['shippingAddress_name'] . "', 
-	  						shippingAddress_street_ddress = '" . $ipn_respons['shippingAddress_street_ddress'] . "', 
-	  						shippingAddress_postal_code   = '" . $ipn_respons['shippingAddress_postal_code'] . "', 
-	  						shippingAddress_city 		  = '" . $ipn_respons['shippingAddress_city'] . "', 
-	  						shippingAddress_country       = '" . $ipn_respons['shippingAddress_country'] . "', 
-	  						token                         =  '" . $ipn_respons['token'] . "'"
-        );
-    }
-
-    public function getIpnStatus($token) {
-        $this->load->model('checkout/order');
-        if (isset($token)) {
-            $query = $this->db->query("SELECT * FROM " . DB_PREFIX . "payson_order WHERE token = '" . $token . "'");
-
-            if ($query->num_rows) {
-
-                foreach ($query->rows as $payson_order) {
-                    $this->db->query("UPDATE `" . DB_PREFIX . "order` SET 
-										shipping_firstname  = '" . $payson_order['shippingAddress_name'] . "',
-										shipping_lastname 	= '',
-										shipping_address_1 	= '" . $payson_order['shippingAddress_street_ddress'] . "',
-										shipping_city 		= '" . $payson_order['shippingAddress_city'] . "', 
-										shipping_country 	= '" . $payson_order['shippingAddress_country'] . "', 
-										shipping_postcode 	= '" . $payson_order['shippingAddress_postal_code'] . "'
-										WHERE order_id 		= '" . (int) $payson_order['order_id'] . "'");
-                }
-                if ($query->row['ipn_status'] === 'PENDING')
-                    return 1;
-                if ($query->row['ipn_status'] === 'ERROR')
-                    return 2;
-            }
-        }
-        return 0;
-    }
-    
+    }   
 }
-
 ?>
