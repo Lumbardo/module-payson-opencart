@@ -1,12 +1,13 @@
 <?php
 
 class ModelPaymentPaysoninvoice extends Model {
-
-    public function getMethod($address) {
+    private $minimumAmountInvoice = 30;
+    
+    public function getMethod($address, $total) {
         $this->load->language('payment/paysoninvoice');
 
         $query = $this->db->query("SELECT * FROM " . DB_PREFIX . "zone_to_geo_zone WHERE geo_zone_id = '" . (int) $this->config->get('paysoninvoice_geo_zone_id') . "' AND country_id = '" . (int) $address['country_id'] . "' AND (zone_id = '" . (int) $address['zone_id'] . "' OR zone_id = '0')");
-
+        
         if (!$this->config->get('paysoninvoice_geo_zone_id')) {
             $status = true;
         } elseif ($query->num_rows) {
@@ -14,33 +15,33 @@ class ModelPaymentPaysoninvoice extends Model {
         } else {
             $status = false;
         }
-
-        $shippingCost = 0;
-        if (isset($this->session->data['shipping_method']))
-            $shippingCost = preg_replace('/[^0-9.,]/', '', $this->session->data['shipping_method']['text']);
-        $cartTotal = $this->cart->getTotal() + str_replace(",", ".", $shippingCost);
-        if (strtoupper($this->session->data['currency']) == 'SEK') {
-            if ($cartTotal < 30)
-                return false;
+        if (strtoupper($this->session->data['currency']) != 'SEK'){
+            $status = false;
         }
-        else
-            return false;
-
+             
+        if(strtoupper($this->config->get('config_currency')) == 'SEK' && $total < $this->minimumAmountInvoice){
+            $status = false;
+        }
+        if(strtoupper($this->config->get('config_currency')) != 'SEK' && $this->currency->convert($total, strtoupper($this->config->get('config_currency')), 'SEK') < $this->minimumAmountInvoice){
+            $status = false;
+        }
+                
         $method_data = array();
 
         $this->load->model('total/paysoninvoice_fee');
+        
+        $totalFee = 0;
+        $taxAmountFee = 0;
+        if($this->config->get('paysoninvoice_fee_status') && $this->config->get('paysoninvoice_fee_fee') > 0){
+            if ($this->config->get('paysoninvoice_fee_tax_class_id')) {
+                $tax_rates = $this->tax->getRates($this->config->get('paysoninvoice_fee_fee'), $this->config->get('paysoninvoice_fee_tax_class_id'));
 
-        $total = 0;
-        $taxAmount = 0;
-
-        if ($this->config->get('paysoninvoice_fee_tax_class_id')) {
-            $tax_rates = $this->tax->getRates($this->config->get('paysoninvoice_fee_fee'), $this->config->get('paysoninvoice_fee_tax_class_id'));
-
-            foreach ($tax_rates as $tax_rate) {
-                $taxAmount += $tax_rate['amount'];
+                foreach ($tax_rates as $tax_rate) {
+                    $taxAmountFee += $tax_rate['amount'];
+                }
             }
+            $total = $this->config->get('paysoninvoice_fee_fee') + $taxAmountFee;
         }
-        $total = $this->config->get('paysoninvoice_fee_fee') + $taxAmount;
 
         if ($status) {
             $method_data = array(
@@ -51,7 +52,7 @@ class ModelPaymentPaysoninvoice extends Model {
         }
         return $method_data;
     }
-
+    
     public function setPaysonOrderDb($ipn_respons) {
         $this->db->query("INSERT INTO " . DB_PREFIX . "payson_order SET 
 	  						order_id                      = '" . $ipn_respons['order_id'] . "', 
@@ -100,7 +101,7 @@ class ModelPaymentPaysoninvoice extends Model {
         }
         return 0;
     }
-
+    
 }
 
 ?>
