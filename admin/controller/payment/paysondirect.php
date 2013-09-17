@@ -52,6 +52,7 @@ class ControllerPaymentPaysondirect extends Controller {
 		$this->data['entry_total'] = $this->language->get('entry_total');	
 		$this->data['entry_geo_zone'] = $this->language->get('entry_geo_zone');
 		$this->data['entry_status'] = $this->language->get('entry_status');
+                $this->data['entry_order_item_details_to_ignore'] = $this->language->get('entry_order_item_details_to_ignore');
 		$this->data['entry_sort_order'] = $this->language->get('entry_sort_order');
                 $this->data['entry_totals_to_ignore'] = $this->language->get('entry_totals_to_ignore');
 		
@@ -81,7 +82,12 @@ class ControllerPaymentPaysondirect extends Controller {
 		} else {
 			$this->data['error_md5'] = '';
 		}
-
+    
+                if (isset($this->error['ignored_order_totals'])) {
+			$this->data['error_ignored_order_totals'] = $this->error['ignored_order_totals'];
+		} else {
+			$this->data['error_ignored_order_totals'] = '';
+		}
 		
   		$this->data['breadcrumbs'] = array();
 
@@ -179,6 +185,12 @@ class ControllerPaymentPaysondirect extends Controller {
 		} else {
 			$this->data['paysondirect_status'] = $this->config->get('paysondirect_status');
 		}
+                
+                if (isset($this->request->post['paysondirect_order_item_details_to_ignore'])) {
+			$this->data['paysondirect_order_item_details_to_ignore'] = $this->request->post['paysondirect_order_item_details_to_ignore'];
+		} else {
+			$this->data['paysondirect_order_item_details_to_ignore'] = $this->config->get('paysondirect_order_item_details_to_ignore');
+		}
 				
 		if (isset($this->request->post['paysondirect_sort_order'])) {
 			$this->data['paysondirect_sort_order'] = $this->request->post['paysondirect_sort_order'];
@@ -216,8 +228,11 @@ class ControllerPaymentPaysondirect extends Controller {
 			}
 			if (!$this->request->post['payson_md5']) {
 				$this->error['md5'] = $this->language->get('error_md5');
-			}
-		}	
+			}                                     
+		}
+                if (!$this->request->post['paysondirect_ignored_order_totals']) {
+				$this->error['ignored_order_totals'] = $this->language->get('error_ignored_order_totals');
+		}
 		
 		if (!$this->error) {
 			return true;
