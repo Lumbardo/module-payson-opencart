@@ -23,7 +23,7 @@ Module for OpenCart implementing Payson
 
 * Go to Extensions->Payments and Payson Invoice.
 
-* Enter your Email, Agent ID,  MD5 Key and secure word  before enabling the module.
+* Enter your Email, Agent ID,  MD5 Key, secure word and Order totals to ignore  before enabling the module.
 
 * Click Save.	
 
