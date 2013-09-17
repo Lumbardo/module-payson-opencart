@@ -5,6 +5,13 @@ Requirements:
 * Curl
 
 -------------------------------------- 
+2013-09-17  (Module 2.8.1)
+
+* Improve: Product list logging.
+* Improve: Validation of Order totals to ignore.
+* Improve:  optional product list by CREDITCARD / BANK
+
+-------------------------------------- 
 2013-08-23  (Module 2.8)
 
 * Improve: with free chekout 
