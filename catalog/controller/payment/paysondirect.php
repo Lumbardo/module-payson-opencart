@@ -6,7 +6,7 @@ class ControllerPaymentPaysondirect extends Controller {
     private $api;
     private $isInvoice;
 
-    const MODULE_VERSION = '2.8';
+    const MODULE_VERSION = '2.8.1';
 
     function __construct($registry) {
         parent::__construct($registry);
@@ -195,10 +195,12 @@ class ControllerPaymentPaysondirect extends Controller {
         else
             $constraints = array($this->config->get('payson_payment_method'));
 
-        $orderItems = $this->getOrderItems();
+        if ($this->isInvoice || $this->config->get('paysondirect_order_item_details_to_ignore')) {
+            $orderItems = $this->getOrderItems();
 
-        $payData->setOrderItems($orderItems);
-
+            $payData->setOrderItems($orderItems);
+        }
+        
         $payData->setFundingConstraints($constraints);
         $payData->setGuaranteeOffered('NO');
         $payData->setTrackingId($this->data['salt']);
@@ -299,6 +301,20 @@ class ControllerPaymentPaysondirect extends Controller {
                 $this->data['order_items'][] = new OrderItem(html_entity_decode($orderTotal['title'], ENT_QUOTES, 'UTF-8'), $orderTotalAmount, 1, $orderTotal['tax_rate'] / 100, $orderTotal['code']);
         }
        
+       if ($this->config->get('payson_logg') == 2) {
+           $this->log->write('***');
+           $this->log->write('please note that the total sum of all order items amount (inc. VAT) must match the total sum of all receivers amount');
+           $this->log->write('PAYSON Produkt Item Details:');
+            foreach ($this->data['order_items'] as $order_items) 
+            {
+            $this->log->write($order_items);
+           }
+            $this->log->write('***');
+            $this->log->write('PAYSON Total Amount:');
+            $this->log->write($this->data['amount']);
+            $this->log->write('***');
+       }
+        
         return $this->data['order_items'];
     }
 
