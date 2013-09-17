@@ -284,7 +284,7 @@ class ControllerPaymentPaysondirect extends Controller {
                 }
             }
 
-            $productTitle = $product['name'];
+            $productTitle = (strlen($product['name']) > 80 ?  substr($product['name'],0,strpos($product['name'],' ',80)) :  $product['name']);
 
             if (!empty($optionsArray))
                 $productTitle .= ' | ' . join('; ', $optionsArray);
