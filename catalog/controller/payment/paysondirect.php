@@ -118,10 +118,12 @@ class ControllerPaymentPaysondirect extends Controller {
         $paymentType = $paymentDetails->getType();
         $transferStatus = $paymentDetails->getStatus();
         $invoiceStatus = $paymentDetails->getInvoiceStatus();
-
+        
         if ($orderId == 0)
             $orderId = $this->session->data['order_id'];
-
+        
+        $this->storeIPNResponse($paymentDetails, $orderId);
+        
         $order_info = $this->model_checkout_order->getOrder($orderId);
 
         if ($paymentType == "INVOICE") {
