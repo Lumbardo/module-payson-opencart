@@ -9,7 +9,8 @@ Requirements:
 
 * Improve: Product list logging.
 * Improve: Validation of Order totals to ignore.
-* Improve:  optional product list by CREDITCARD / BANK
+* Improve:  optional product list by CREDITCARD / BANK.
+* Payment details to database. 
 
 -------------------------------------- 
 2013-08-23  (Module 2.8)
