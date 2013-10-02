@@ -6,7 +6,7 @@ class ControllerPaymentPaysondirect extends Controller {
     private $api;
     private $isInvoice;
 
-    const MODULE_VERSION = '2.8.1';
+    const MODULE_VERSION = '2.8.2';
 
     function __construct($registry) {
         parent::__construct($registry);
@@ -118,12 +118,12 @@ class ControllerPaymentPaysondirect extends Controller {
         $paymentType = $paymentDetails->getType();
         $transferStatus = $paymentDetails->getStatus();
         $invoiceStatus = $paymentDetails->getInvoiceStatus();
-        
+
         if ($orderId == 0)
             $orderId = $this->session->data['order_id'];
-        
+
         $this->storeIPNResponse($paymentDetails, $orderId);
-        
+
         $order_info = $this->model_checkout_order->getOrder($orderId);
 
         if ($paymentType == "INVOICE") {
@@ -169,7 +169,7 @@ class ControllerPaymentPaysondirect extends Controller {
         require_once 'payson/paysonapi.php';
 
         $this->load->language('payment/paysondirect');
-        
+
         if (!$this->testMode) {
             $receiver = new Receiver(trim($this->config->get('payson_user_name')), $this->data['amount']);
         } else {
@@ -184,12 +184,21 @@ class ControllerPaymentPaysondirect extends Controller {
         $payData->setCurrencyCode($this->currencyPaysondirect());
         $payData->setLocaleCode($this->languagePaysondirect());
 
-        $constraints = "";
+        $orderItems = $this->getOrderItems();
 
+        $constraints = "";
+        
         if ($this->isInvoice) {
-            if ($this->hasInvoiceEnabled())
+            if ($this->hasInvoiceEnabled()) {
                 $constraints = array(FundingConstraint::INVOICE);
-            else {
+
+                foreach ($orderItems as $key => $orderTotal) {
+                    if ($orderTotal->getSku() == "paysoninvoice_fee") {
+                        $payData->setInvoiceFee($orderTotal->getUnitPrice()*($orderTotal->getTaxPercentage()+1));
+                        unset($orderItems[$key]);
+                    }
+                }
+            } else {
                 $this->paysonApiError($this->language->get('error_invoice_not_enabled'));
                 return;
             }
@@ -197,12 +206,12 @@ class ControllerPaymentPaysondirect extends Controller {
         else
             $constraints = array($this->config->get('payson_payment_method'));
 
-        if ($this->isInvoice || $this->config->get('paysondirect_order_item_details_to_ignore')) {
-            $orderItems = $this->getOrderItems();
 
-            $payData->setOrderItems($orderItems);
-        }
-        
+        $payData->setOrderItems($orderItems);
+
+
+        $this->writeArrayToLog($orderItems, sprintf('Order items sent to Payson (%sSEK)', $this->data['amount']));
+
         $payData->setFundingConstraints($constraints);
         $payData->setGuaranteeOffered('NO');
         $payData->setTrackingId($this->data['salt']);
@@ -226,8 +235,7 @@ class ControllerPaymentPaysondirect extends Controller {
         $errors = $response->getResponseEnvelope()->getErrors();
 
         if ($this->config->get('payson_logg') == 1) {
-            foreach ($errors as $error)
-                $this->writeToLog('Error id:&#9;&#9;&#9;' . $error->getErrorId() . '&#10;Message:&#9;&#9;' . $error->getMessage() . '&#10;Parameter:&#9;&#9;' . $error->getParameter() . '&#10;');
+            $this->writeToLog(print_r($errors, true));
         }
 
         return $errors;
@@ -242,12 +250,22 @@ class ControllerPaymentPaysondirect extends Controller {
         $paymentDetailsFormat = "Payson reference:&#9;%s&#10;Correlation id:&#9;%s&#10;";
         if ($this->config->get('payson_logg') == 1) {
 
-            $this->log->write('PAYSON&#10;' . $message . '&#10;' . ($paymentDetails != false ? sprintf($paymentDetailsFormat, $paymentDetails->getPurchaseId(), $paymentDetails->getCorrelationId()) : ''));
+            $this->log->write('PAYSON&#10;' . $message . '&#10;' . ($paymentDetails != false ? sprintf($paymentDetailsFormat, $paymentDetails->getPurchaseId(), $paymentDetails->getCorrelationId()) : '') . $this->writeModuleInfoToLog());
         }
     }
 
+    private function writeArrayToLog($array, $additionalInfo = "") {
+        if ($this->config->get('payson_logg') == 1) {
+            $this->log->write('PAYSON&#10;Additional information:&#9;' . $additionalInfo . '&#10;&#10;' . print_r($array, true) . '&#10;' . $this->writeModuleInfoToLog());
+        }
+    }
+
+    private function writeModuleInfoToLog() {
+        return 'Module version: ' . self::MODULE_VERSION . '&#10;------------------------------------------------------------------------&#10;';
+    }
+
     private function getAPIInstance() {
-       require_once 'payson/paysonapi.php';
+        require_once 'payson/paysonapi.php';
 
         if (!$this->testMode) {
             $credentials = new PaysonCredentials(trim($this->config->get('payson_agent_id')), trim($this->config->get('payson_md5')), null, 'payson_opencart|' . self::MODULE_VERSION . '|' . VERSION);
@@ -268,14 +286,14 @@ class ControllerPaymentPaysondirect extends Controller {
         require_once 'payson/orderitem.php';
 
         $this->load->language('payment/paysondirect');
-        
+
         $orderId = $this->session->data['order_id'];
 
         $order_data = $this->model_checkout_order->getOrder($this->session->data['order_id']);
-        
+
         $query = "SELECT `order_product_id`, `name`, `model`, `price`, `quantity`, `tax` / `price` AS 'tax_rate' FROM `" . DB_PREFIX . "order_product` WHERE `order_id` = " . (int) $orderId . " UNION ALL SELECT 0, '" . $this->language->get('text_gift_card') . "', `code`, `amount`, '1', 0.00 FROM `" . DB_PREFIX . "order_voucher` WHERE `order_id` = " . (int) $orderId;
         $product_query = $this->db->query($query)->rows;
-        
+
         foreach ($product_query as $product) {
 
             $productOptions = $this->db->query("SELECT name, value FROM " . DB_PREFIX . 'order_option WHERE order_id = ' . (int) $orderId . ' AND order_product_id=' . (int) $product['order_product_id'])->rows;
@@ -286,7 +304,7 @@ class ControllerPaymentPaysondirect extends Controller {
                 }
             }
 
-            $productTitle = (strlen($product['name']) > 80 ?  substr($product['name'],0,strpos($product['name'],' ',80)) :  $product['name']);
+            $productTitle = (strlen($product['name']) > 80 ? substr($product['name'], 0, strpos($product['name'], ' ', 80)) : $product['name']);
 
             if (!empty($optionsArray))
                 $productTitle .= ' | ' . join('; ', $optionsArray);
@@ -300,23 +318,9 @@ class ControllerPaymentPaysondirect extends Controller {
 
         foreach ($orderTotals as $orderTotal) {
             $orderTotalAmount = $this->currency->format($orderTotal['value'], $order_data['currency_code'], $order_data['currency_value'], false);
-                $this->data['order_items'][] = new OrderItem(html_entity_decode($orderTotal['title'], ENT_QUOTES, 'UTF-8'), $orderTotalAmount, 1, $orderTotal['tax_rate'] / 100, $orderTotal['code']);
+            $this->data['order_items'][] = new OrderItem(html_entity_decode($orderTotal['title'], ENT_QUOTES, 'UTF-8'), $orderTotalAmount, 1, $orderTotal['tax_rate'] / 100, $orderTotal['code']);
         }
-       
-       if ($this->config->get('payson_logg') == 2) {
-           $this->log->write('***');
-           $this->log->write('please note that the total sum of all order items amount (inc. VAT) must match the total sum of all receivers amount');
-           $this->log->write('PAYSON Produkt Item Details:');
-            foreach ($this->data['order_items'] as $order_items) 
-            {
-            $this->log->write($order_items);
-           }
-            $this->log->write('***');
-            $this->log->write('PAYSON Total Amount:');
-            $this->log->write($this->data['amount']);
-            $this->log->write('***');
-       }
-        
+
         return $this->data['order_items'];
     }
 
@@ -399,7 +403,6 @@ class ControllerPaymentPaysondirect extends Controller {
         $orderId = 0;
 
         // Set up API
-        
         // Validate the request
         $response = $this->api->validate($postData);
         //OBS!  token �r samma i ipn och return
