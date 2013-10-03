@@ -29,7 +29,7 @@ $_['entry_geo_zone']           		= 'Geo Zone:';
 $_['entry_status']             		= 'Status:';
 $_['entry_sort_order']         		= 'Sorteringsordning:';
 $_['entry_logg']   			= 'Logg:<br /><span class="help">Fels&ouml;ka svaret fr&aring;n Payson (Ange 0, 1 elle 2).<br /> Du hittar dina loggar i Admin | System -> Error Log.</span>';
-$_['entry_totals_to_ignore']            = 'Ignorerade ordertillägg:<br /><span class="help">Ange de ordertillägg som du vill inaktivera (sub_total, total, taxes).</span>';
+$_['entry_totals_to_ignore']            = 'Ignorerade ordertillägg:<br/><span class="help">Kommaseparerad lista med ordertillägg som ej skall skickas till Payson</span>';
 
 $_['entry_order_item_details_to_ignore'] 	= 'Ignorerade produktlista vid KORT och BANK:<br /><span class="help">Note: produklistan kr&auml;vs f&ouml;r fakturabetalning och frivilligt f&ouml;r andra typer av betalningar.</span>';
 // Error
@@ -37,6 +37,6 @@ $_['error_permission']   			= 'Varning: Du har inte beh&ouml;righet att &auml; n
 $_['error_user_name']     			= 'E-postadress saknas!';
 $_['error_agent_id']     			= 'Agent ID saknas!';
 $_['error_md5']     				= 'MD5-nyckel saknas!';
-$_['error_ignored_order_totals']     		= 'Ange nedanst&aring;ende texten:<br /> sub_total, total, taxes';
+$_['error_ignored_order_totals']     		= 'Ange en kommaseparerad lista med ordertillägg som ej skall skickas till Payson';
 
 ?>

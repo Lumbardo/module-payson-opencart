@@ -28,7 +28,7 @@ $_['entry_geo_zone']     			= 'Geo Zone:';
 $_['entry_status']       			= 'Status:';
 $_['entry_sort_order']   			= 'Sort Order:';
 $_['entry_logg']   				= 'Logg:<br /><span class="help">Ddebug the response from Payson (0, 1 or 2).<br /> You can find your logs in Admin | System -> Error Log. </span>';
-$_['entry_totals_to_ignore'] 			= 'Order totals to ignore:<br /><span class="help">Enter the code for the order totals to ignore (sub_total, total, taxes).</span>';
+$_['entry_totals_to_ignore'] 			= 'Order totals to ignore:<br/><span class="help">Comma separated list with order totals not to send to payson</span>';
 
 $_['entry_order_item_details_to_ignore'] 	= 'Order Item Details to ignore by CREDITCARD / BANK:<br /><span class="help">Note: Order Items are required for INVOICE payments and optional for other payment types. Also, please note that the total sum of all order items amount (inc. VAT) must match the total sum of all receivers amount.</span>';
 // Error
@@ -36,5 +36,5 @@ $_['error_permission']   			= 'Warning: You do not have permission to modify pay
 $_['error_user_name']     			= 'E-mail Required!';
 $_['error_agent_id']     			= 'Agent ID Required!';
 $_['error_md5']     				= 'MD5-key Required!';
-$_['error_ignored_order_totals']     		= 'Enter this text:<br /> sub_total, total, taxes';
+$_['error_ignored_order_totals']     		= 'Enter a comma separated list with order totals not to send to payson';
 ?>

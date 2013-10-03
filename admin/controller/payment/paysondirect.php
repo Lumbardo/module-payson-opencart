@@ -185,12 +185,6 @@ class ControllerPaymentPaysondirect extends Controller {
 		} else {
 			$this->data['paysondirect_status'] = $this->config->get('paysondirect_status');
 		}
-                
-                if (isset($this->request->post['paysondirect_order_item_details_to_ignore'])) {
-			$this->data['paysondirect_order_item_details_to_ignore'] = $this->request->post['paysondirect_order_item_details_to_ignore'];
-		} else {
-			$this->data['paysondirect_order_item_details_to_ignore'] = $this->config->get('paysondirect_order_item_details_to_ignore');
-		}
 				
 		if (isset($this->request->post['paysondirect_sort_order'])) {
 			$this->data['paysondirect_sort_order'] = $this->request->post['paysondirect_sort_order'];
@@ -201,7 +195,12 @@ class ControllerPaymentPaysondirect extends Controller {
                 if (isset($this->request->post['paysondirect_ignored_order_totals'])) {
 			$this->data['paysondirect_ignored_order_totals'] = $this->request->post['paysondirect_ignored_order_totals'];
 		} else {
-			$this->data['paysondirect_ignored_order_totals'] = $this->config->get('paysondirect_ignored_order_totals');
+                        if($this->config->get('paysondirect_ignored_order_totals') == null)
+                        {
+                            $this->data['paysondirect_ignored_order_totals'] = 'sub_total, total, taxes';
+                        }
+                        else
+                            $this->data['paysondirect_ignored_order_totals'] = $this->config->get('paysondirect_ignored_order_totals');
 		}
 
 		$this->template = 'payment/paysondirect.tpl';

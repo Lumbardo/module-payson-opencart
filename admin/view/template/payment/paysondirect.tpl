@@ -98,26 +98,6 @@
  			</td>
           </tr>
 
-
-                    <tr>
-                        <td><?php echo $entry_order_item_details_to_ignore; ?></td>
-                        <td><select name="paysondirect_order_item_details_to_ignore">
-                                <?php if ($paysondirect_order_item_details_to_ignore) { ?>
-                                <option value="1" selected="selected"><?php echo $text_enabled; ?></option>
-                                <option value="0"><?php echo $text_disabled; ?></option>
-                                <?php } else { ?>
-                                <option value="1"><?php echo $text_enabled; ?></option>
-                                <option value="0" selected="selected"><?php echo $text_disabled; ?></option>
-                                <?php } ?>
-                            </select></td>
-                    </tr>
-
-
-
-
-
-
-           
           <tr>
             <td><?php echo $secure_word; ?></td>
             <td><input type="text" name="payson_secure_word" value="<?php echo $payson_secure_word; ?>" /></td>
