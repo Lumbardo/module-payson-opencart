@@ -6,7 +6,7 @@ class ControllerPaymentPaysondirect extends Controller {
     private $api;
     private $isInvoice;
 
-    const MODULE_VERSION = '2.8.2';
+    const MODULE_VERSION = '2.9.0';
 
     function __construct($registry) {
         parent::__construct($registry);
@@ -308,7 +308,7 @@ class ControllerPaymentPaysondirect extends Controller {
 
             if (!empty($optionsArray))
                 $productTitle .= ' | ' . join('; ', $optionsArray);
-
+            
             $product_price = $this->currency->format($product['price'], $order_data['currency_code'], $order_data['currency_value'], false);
 
             $this->data['order_items'][] = new OrderItem(html_entity_decode($productTitle, ENT_QUOTES, 'UTF-8'), $product_price, $product['quantity'], $product['tax_rate'], $product['model']);
@@ -385,8 +385,11 @@ class ControllerPaymentPaysondirect extends Controller {
                 $total_data[$key]['tax_rate'] = '0';
             }
         }
-
-        $ignoredOrderTotals = array_map('trim', explode(',', $this->config->get('paysondirect_ignored_order_totals')));
+        $ignoredTotals = $this->config->get('paysondirect_ignored_order_totals');
+        if($ignoredTotals == null)
+            $ignoredTotals = 'sub_total, total, taxes';
+        
+        $ignoredOrderTotals = array_map('trim', explode(',', $ignoredTotals));
         foreach ($total_data as $key => $orderTotal) {
             if (in_array($orderTotal['code'], $ignoredOrderTotals)) {
                 unset($total_data[$key]);
