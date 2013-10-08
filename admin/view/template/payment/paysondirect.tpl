@@ -105,7 +105,10 @@
           
           <tr>
             <td><?php echo $entry_logg; ?></td>
-            <td><input type="text" name="payson_logg" value="<?php echo $payson_logg; ?>" /></td>
+                                <td><select name="payson_logg">
+                                <option value="1" <?php echo ($payson_logg == 1 ? 'selected="selected"' : '""') . '>'  . $text_enabled?></option>
+                                <option value="0" <?php echo ($payson_logg == 0 ? 'selected="selected"' : '""') . '>' . $text_disabled?></option>
+                            </select></td>
           </tr>          
                   
           <tr>

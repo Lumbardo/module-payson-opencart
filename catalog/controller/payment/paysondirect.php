@@ -6,7 +6,7 @@ class ControllerPaymentPaysondirect extends Controller {
     private $api;
     private $isInvoice;
 
-    const MODULE_VERSION = '2.9.0';
+    const MODULE_VERSION = '2.9.1';
 
     function __construct($registry) {
         parent::__construct($registry);
@@ -105,6 +105,8 @@ class ControllerPaymentPaysondirect extends Controller {
                 $this->logErrorsAndReturnThem($paymentDetailsResponse);
             }
         }
+        else        
+            $this->writeToLog("Returned from Payson without a Token");
     }
 
     /**
