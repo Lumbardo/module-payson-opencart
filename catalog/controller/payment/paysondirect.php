@@ -6,7 +6,7 @@ class ControllerPaymentPaysondirect extends Controller {
     private $api;
     private $isInvoice;
 
-    const MODULE_VERSION = '2.9.2';
+    const MODULE_VERSION = '2.9.3';
 
     function __construct($registry) {
         parent::__construct($registry);
@@ -23,6 +23,7 @@ class ControllerPaymentPaysondirect extends Controller {
     public function index() {
         $this->load->language('payment/paysondirect');
         $this->data['button_confirm'] = $this->language->get('button_confirm');
+        $this->data['text_wait'] = $this->language->get('text_wait');
 
         if ($this->isInvoice) {
             $total = 0;
@@ -39,7 +40,7 @@ class ControllerPaymentPaysondirect extends Controller {
 
             $this->data['text_invoice_terms'] = sprintf($this->language->get('text_invoice_terms'), $this->config->get('paysoninvoice_fee_status') ? $total : 0);
         }
-
+        
         if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/payment/paysondirect.tpl')) {
             $this->template = $this->config->get('config_template') . '/template/payment/paysondirect.tpl';
         } else {
@@ -50,6 +51,11 @@ class ControllerPaymentPaysondirect extends Controller {
 
     public function confirm() {
 
+        $this->setupPurchaseData();
+    }
+
+    private function setupPurchaseData() {
+        $this->load->language('payment/paysondirect');
         $this->load->model('checkout/order');
         $order_data = $this->model_checkout_order->getOrder($this->session->data['order_id']);
 
@@ -61,7 +67,7 @@ class ControllerPaymentPaysondirect extends Controller {
         $this->data['ipn_url'] = $this->url->link('payment/paysondirect/paysonIpn');
 
         $this->data['order_id'] = $order_data['order_id'];
-        $this->data['amount'] = $this->currency->format($order_data['total'], $order_data['currency_code'], $order_data['currency_value'], false);
+        $this->data['amount'] = $this->currency->format($order_data['total']*100, $order_data['currency_code'], $order_data['currency_value'], false) / 100;
         $this->data['currency_code'] = $order_data['currency_code'];
         $this->data['language_code'] = $order_data['language_code'];
         $this->data['salt'] = md5($this->config->get('payson_secure_word')) . '1-' . $this->data['order_id'];
@@ -69,11 +75,22 @@ class ControllerPaymentPaysondirect extends Controller {
         $this->data['sender_email'] = $order_data['email'];
         $this->data['sender_first_name'] = html_entity_decode($order_data['firstname'], ENT_QUOTES, 'UTF-8');
         $this->data['sender_last_name'] = html_entity_decode($order_data['lastname'], ENT_QUOTES, 'UTF-8');
-
+        
         //Call PaysonAPI    	
-        $this->data['action'] = $this->getPaymentURL();
-
-        echo $this->data['action'];
+        $result = $this->getPaymentURL();
+        
+        $returnData = array();
+        
+        if($result["Result"] == "OK")
+        {
+            $returnData["paymentURL"] = $result["PaymentURL"];
+        }
+        else
+        {
+           $returnData["error"] = $this->language->get("text_payson_payment_error");
+        }
+        
+        $this->response->setOutput(json_encode($returnData));
     }
 
     public function returnFromPayson() {
@@ -105,7 +122,7 @@ class ControllerPaymentPaysondirect extends Controller {
                 $this->logErrorsAndReturnThem($paymentDetailsResponse);
             }
         }
-        else        
+        else
             $this->writeToLog("Returned from Payson without a Token");
     }
 
@@ -189,14 +206,14 @@ class ControllerPaymentPaysondirect extends Controller {
         $orderItems = $this->getOrderItems();
 
         $constraints = "";
-        
+
         if ($this->isInvoice) {
             if ($this->hasInvoiceEnabled()) {
                 $constraints = array(FundingConstraint::INVOICE);
 
                 foreach ($orderItems as $key => $orderTotal) {
                     if ($orderTotal->getSku() == "paysoninvoice_fee") {
-                        $payData->setInvoiceFee($orderTotal->getUnitPrice()*($orderTotal->getTaxPercentage()+1));
+                        $payData->setInvoiceFee($orderTotal->getUnitPrice() * ($orderTotal->getTaxPercentage() + 1));
                         unset($orderItems[$key]);
                     }
                 }
@@ -220,19 +237,14 @@ class ControllerPaymentPaysondirect extends Controller {
 
         $payResponse = $this->api->pay($payData);
 
-        if ($payResponse->getResponseEnvelope()->wasSuccessful()) {  //ack = SUCCESS och token  = token = N�got
-            //return the url: https://www.payson.se/paysecure/?token=#
-            return $this->api->getForwardPayUrl($payResponse);
+        if ($payResponse->getResponseEnvelope()->wasSuccessful()) {
+            return array("Result" => "OK", "PaymentURL" => $this->api->getForwardPayUrl($payResponse));
         } else {
             $errors = $this->logErrorsAndReturnThem($payResponse);
-
-            if ($errors[0]->getErrorId()) {
-                $this->response->addHeader("HTTP/1.0 500 Internal Server Error");
-                $this->response->setOutput($errors[0]->getMessage());
-            }
+            return array("Result" => "ERROR", "ERRORS" => $errors);
         }
     }
-
+    
     function logErrorsAndReturnThem($response) {
         $errors = $response->getResponseEnvelope()->getErrors();
 
@@ -293,7 +305,7 @@ class ControllerPaymentPaysondirect extends Controller {
 
         $order_data = $this->model_checkout_order->getOrder($this->session->data['order_id']);
 
-        $query = "SELECT `order_product_id`, `name`, `model`, `price`, `quantity`, `tax` FROM `" . DB_PREFIX . "order_product` WHERE `order_id` = " . (int) $orderId . " UNION ALL SELECT 0, '" . $this->language->get('text_gift_card') . "', `code`, `amount`, '1', 0.00 FROM `" . DB_PREFIX . "order_voucher` WHERE `order_id` = " . (int) $orderId;
+        $query = "SELECT `order_product_id`, `name`, `model`, `price`, `quantity`, `tax` / `price` as 'tax_rate' FROM `" . DB_PREFIX . "order_product` WHERE `order_id` = " . (int) $orderId . " UNION ALL SELECT 0, '" . $this->language->get('text_gift_card') . "', `code`, `amount`, '1', 0.00 FROM `" . DB_PREFIX . "order_voucher` WHERE `order_id` = " . (int) $orderId;
         $product_query = $this->db->query($query)->rows;
 
         foreach ($product_query as $product) {
@@ -310,16 +322,16 @@ class ControllerPaymentPaysondirect extends Controller {
 
             if (!empty($optionsArray))
                 $productTitle .= ' | ' . join('; ', $optionsArray);
-            
-            $product_price = $this->currency->format($product['price'], $order_data['currency_code'], $order_data['currency_value'], false);
 
-            $this->data['order_items'][] = new OrderItem(html_entity_decode($productTitle, ENT_QUOTES, 'UTF-8'), $product_price, $product['quantity'], Round($product['tax']/$product['price'], 3), $product['model']);
+            $product_price = $this->currency->format($product['price']*100, $order_data['currency_code'], $order_data['currency_value'], false)/100;
+
+            $this->data['order_items'][] = new OrderItem(html_entity_decode($productTitle, ENT_QUOTES, 'UTF-8'), $product_price, $product['quantity'], $product['tax_rate'], $product['model']);
         }
 
         $orderTotals = $this->getOrderTotals();
 
         foreach ($orderTotals as $orderTotal) {
-            $orderTotalAmount = $this->currency->format($orderTotal['value'], $order_data['currency_code'], $order_data['currency_value'], false);
+            $orderTotalAmount = $this->currency->format($orderTotal['value']*100, $order_data['currency_code'], $order_data['currency_value'], false) / 100;
             $this->data['order_items'][] = new OrderItem(html_entity_decode($orderTotal['title'], ENT_QUOTES, 'UTF-8'), $orderTotalAmount, 1, $orderTotal['tax_rate'] / 100, $orderTotal['code']);
         }
 
@@ -388,9 +400,9 @@ class ControllerPaymentPaysondirect extends Controller {
             }
         }
         $ignoredTotals = $this->config->get('paysondirect_ignored_order_totals');
-        if($ignoredTotals == null)
+        if ($ignoredTotals == null)
             $ignoredTotals = 'sub_total, total, taxes';
-        
+
         $ignoredOrderTotals = array_map('trim', explode(',', $ignoredTotals));
         foreach ($total_data as $key => $orderTotal) {
             if (in_array($orderTotal['code'], $ignoredOrderTotals)) {
